@@ -52,3 +52,7 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+*.vsidx
+/.vs/DotNet-NLayer-WebAPI/v17/DocumentLayout.backup.json
+/.vs/DotNet-NLayer-WebAPI/v17/DocumentLayout.json
+/.vs/DotNet-NLayer-WebAPI/v17/.suo
