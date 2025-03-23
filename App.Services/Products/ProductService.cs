@@ -1,17 +1,20 @@
 ﻿using App.Repositories;
 using App.Repositories.Products;
+using App.Services.Products.Create;
+using App.Services.Products.Update;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 
 namespace App.Services.Products
 {
-    public class ProductService(IProductRepository productRepository, IUnitOfWork unitOfWork) : IProductService
+    public class ProductService(IProductRepository productRepository, IUnitOfWork unitOfWork, IMapper mapper) : IProductService
     {
         public async Task<ServiceResult<IEnumerable<ProductDto>>> GetTopPriceProductsAsync(int count)
         {
             var products = await productRepository.GetTopPriceProductsAsync(count);
-            var productsAsDto = products.Select(p => new ProductDto(p.Id, p.Name, p.Price, p.Stock));
 
+            var productsAsDto = mapper.Map<IEnumerable<ProductDto>>(products);
 
             return ServiceResult<IEnumerable<ProductDto>>.Success(productsAsDto);
         }
@@ -19,7 +22,8 @@ namespace App.Services.Products
         public async Task<ServiceResult<IEnumerable<ProductDto>>> GetAllAsync()
         {
             var products = await productRepository.GetAll().ToListAsync();
-            var productsAsDto = products.Select(p => new ProductDto(p.Id, p.Name, p.Price, p.Stock));
+
+            var productsAsDto = mapper.Map<List<ProductDto>>(products);
 
             return ServiceResult<IEnumerable<ProductDto>>.Success(productsAsDto);
         }
@@ -27,7 +31,8 @@ namespace App.Services.Products
         public async Task<ServiceResult<PaginatedResult<ProductDto>>> GetPagedAsync(int pageNumber, int pageSize)
         {
             var products = await productRepository.GetPagedAsync(pageNumber, pageSize).ToListAsync();
-            var productsAsDto = products.Select(p => new ProductDto(p.Id, p.Name, p.Price, p.Stock)).ToList();
+
+            var productsAsDto = mapper.Map<List<ProductDto>>(products);
 
             var paginatedResult = new PaginatedResult<ProductDto>
             {
@@ -44,9 +49,12 @@ namespace App.Services.Products
         public async Task<ServiceResult<ProductDto?>> GetByIdAsync(int id)
         {
             var product = await productRepository.GetByIdAsync(id);
-            if(product is null) return ServiceResult<ProductDto?>.Fail("Product not found", HttpStatusCode.NotFound);
 
-            var productAsDto = new ProductDto(product!.Id, product.Name, product.Price, product.Stock);   
+            if(product is null) return 
+                ServiceResult<ProductDto?>.Fail("Product not found", HttpStatusCode.NotFound);
+
+            var productAsDto = mapper.Map<ProductDto>(product);
+
             return ServiceResult<ProductDto>.Success(productAsDto)!;
         }
 
@@ -57,12 +65,7 @@ namespace App.Services.Products
             if (anyProduct)
                 return ServiceResult<CreateProductResponse>.Fail("Ürün ismi veritabanında bulunmaktadır.");
 
-            var product = new Product()
-            {
-                Name = request.Name,
-                Price = request.Price,
-                Stock = request.Stock,
-            };
+            var product = mapper.Map<Product>(request);
 
             await productRepository.AddAsync(product);
             await unitOfWork.SaveChangesAsync();
@@ -75,9 +78,7 @@ namespace App.Services.Products
             var product = await productRepository.GetByIdAsync(request.Id);
             if (product is null) return ServiceResult.Fail("Product not found", HttpStatusCode.NotFound);
 
-            product!.Name = request.Name;
-            product.Price = request.Price;
-            product.Stock = request.Stock;
+            mapper.Map(request, product);
 
             productRepository.Update(product);
             await unitOfWork.SaveChangesAsync();
