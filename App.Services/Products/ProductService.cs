@@ -110,8 +110,7 @@ namespace App.Services.Products
         public async Task<ServiceResult> DeleteAsync(int id)
         {
             var product = await productRepository.GetByIdAsync(id);
-            if (product is null) return ServiceResult.Fail("Product not found", HttpStatusCode.NotFound);
-
+        
             productRepository.Delete(product!);
             await unitOfWork.SaveChangesAsync();
 

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace App.Services;
+namespace App.Services.Filters;
 
 public class FluentValidationFilter : IAsyncActionFilter
 {
@@ -11,13 +11,13 @@ public class FluentValidationFilter : IAsyncActionFilter
         {
             var errors = context.ModelState.Values
                 .SelectMany(x => x.Errors)
-                .Select(x => x.ErrorMessage).ToList();  
+                .Select(x => x.ErrorMessage).ToList();
 
             var resultModel = ServiceResult.Fail(errors);
             context.Result = new BadRequestObjectResult(resultModel);
             return;
         }
 
-        await next();   
+        await next();
     }
 }

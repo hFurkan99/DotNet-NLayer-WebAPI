@@ -1,10 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace App.Repositories;
 
-public class GenericRepository<T>(AppDbContext context) : IGenericRepository<T> where T : class
+public class GenericRepository<T, TId>(AppDbContext context) : IGenericRepository<T, TId> where T : BaseEntity<TId> where TId : struct
 {
     protected AppDbContext Context = context;
 
@@ -14,7 +13,9 @@ public class GenericRepository<T>(AppDbContext context) : IGenericRepository<T> 
 
     public IQueryable<T> Where(Expression<Func<T, bool>> predicate) => _dbSet.Where(predicate).AsNoTracking();
 
-    public ValueTask<T?> GetByIdAsync(int id) => _dbSet.FindAsync(id);
+    public Task<bool> AnyAsync(TId id) => _dbSet.AnyAsync(x => x.Id.Equals(id));
+
+    public ValueTask<T?> GetByIdAsync(TId id) => _dbSet.FindAsync(id);
 
     public async Task<PaginatedResult<T>> GetPagedAsync(int pageNumber, int pageSize)
     {
@@ -22,6 +23,7 @@ public class GenericRepository<T>(AppDbContext context) : IGenericRepository<T> 
 
         var items = await _dbSet
             .AsNoTracking()
+            .OrderBy(x => x.Id)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
