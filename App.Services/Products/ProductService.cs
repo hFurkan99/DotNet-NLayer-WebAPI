@@ -2,6 +2,7 @@
 using App.Repositories.Products;
 using App.Services.ExceptionHandlers;
 using App.Services.Products.Create;
+using App.Services.Products.Dto;
 using App.Services.Products.Update;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -31,14 +32,14 @@ namespace App.Services.Products
 
         public async Task<ServiceResult<PaginatedResult<ProductDto>>> GetPagedAsync(int pageNumber, int pageSize)
         {
-            var products = await productRepository.GetPagedAsync(pageNumber, pageSize).ToListAsync();
+            var paginatedProductsResults = await productRepository.GetPagedAsync(pageNumber, pageSize);
 
-            var productsAsDto = mapper.Map<List<ProductDto>>(products);
+            var productsAsDto = mapper.Map<List<ProductDto>>(paginatedProductsResults.Items);
 
             var paginatedResult = new PaginatedResult<ProductDto>
             {
                 Items = productsAsDto,
-                TotalCount = products.Count,
+                TotalCount = paginatedProductsResults.TotalCount,
                 PageNumber = pageNumber,
                 PageSize = pageSize
             };
@@ -59,25 +60,31 @@ namespace App.Services.Products
             return ServiceResult<ProductDto>.Success(productAsDto)!;
         }
 
-        public async Task<ServiceResult<CreateProductResponse>> CreateAsync(CreateProductRequest request)
+        public async Task<ServiceResult<int>> CreateAsync(CreateProductRequest request)
         {
-            var anyProduct = await productRepository.Where(x => x.Name == request.Name).AnyAsync();
+            var isProductNameExist = await productRepository.Where(x => x.Name == request.Name).AnyAsync();
 
-            if (anyProduct)
-                return ServiceResult<CreateProductResponse>.Fail("Ürün ismi veritabanında bulunmaktadır.");
+            if (isProductNameExist)
+                return ServiceResult<int>.Fail("Ürün ismi veritabanında bulunmaktadır.");
 
             var product = mapper.Map<Product>(request);
 
             await productRepository.AddAsync(product);
             await unitOfWork.SaveChangesAsync();
 
-            return ServiceResult<CreateProductResponse>.SuccessAsCreated(new CreateProductResponse(product.Id), $"/api/Products/GetById?id={product.Id}");
+            return ServiceResult<int>.SuccessAsCreated(product.Id, $"/api/Products/GetById?id={product.Id}");
         }
 
         public async Task<ServiceResult> UpdateAsync(UpdateProductRequest request)
         {
             var product = await productRepository.GetByIdAsync(request.Id);
-            if (product is null) return ServiceResult.Fail("Product not found", HttpStatusCode.NotFound);
+            if (product is null) 
+                return ServiceResult.Fail("Product not found", HttpStatusCode.NotFound);
+
+            var isProductNameExist = await productRepository.Where(x => x.Name == request.Name && x.Id != product.Id).AnyAsync();
+
+            if (isProductNameExist)
+                return ServiceResult.Fail("Ürün ismi veritabanında bulunmaktadır.");
 
             mapper.Map(request, product);
 

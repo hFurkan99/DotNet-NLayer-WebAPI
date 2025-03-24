@@ -56,3 +56,7 @@ nunit-*.xml
 /.vs/DotNet-NLayer-WebAPI/v17/DocumentLayout.backup.json
 /.vs/DotNet-NLayer-WebAPI/v17/DocumentLayout.json
 /.vs/DotNet-NLayer-WebAPI/v17/.suo
+*.v9.bin
+/.vs/DotNet-NLayer-WebAPI/DesignTimeBuild/.dtbcache.v2
+/.vs/DotNet-NLayer-WebAPI/v17/HierarchyCache.v1.txt
+/.vs/DotNet-NLayer-WebAPI/v17/.futdcache.v2

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace App.Repositories;
 
@@ -15,15 +16,23 @@ public class GenericRepository<T>(AppDbContext context) : IGenericRepository<T> 
 
     public ValueTask<T?> GetByIdAsync(int id) => _dbSet.FindAsync(id);
 
-    public IQueryable<T> GetPagedAsync(int pageNumber, int pageSize)
+    public async Task<PaginatedResult<T>> GetPagedAsync(int pageNumber, int pageSize)
     {
-        var items = _dbSet
-            .AsNoTracking()
-            .AsQueryable()
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize);
+        var totalCount = await _dbSet.CountAsync();
 
-        return items;
+        var items = await _dbSet
+            .AsNoTracking()
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return new PaginatedResult<T>()
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 
     public async ValueTask AddAsync(T entity) => await _dbSet.AddAsync(entity);

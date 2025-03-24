@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 
-namespace App.Services.Products.Create;
+namespace App.Services.Products.Update;
 
-public class CreateProductRequestValidator : AbstractValidator<CreateProductRequest>
+public class UpdateProductRequestValidator : AbstractValidator<UpdateProductRequest>
 {
-    public CreateProductRequestValidator()
+    public UpdateProductRequestValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Ürün ismi gereklidir.")
